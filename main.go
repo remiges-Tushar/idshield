@@ -13,6 +13,7 @@ import (
 	"github.com/remiges-tech/alya/router"
 	"github.com/remiges-tech/alya/service"
 	"github.com/remiges-tech/alya/wscutils"
+	"github.com/remiges-tech/idshield/webServices/capsvc"
 	"github.com/remiges-tech/idshield/webServices/groupsvc"
 	"github.com/remiges-tech/idshield/webServices/usersvc"
 	"github.com/remiges-tech/logharbour/logharbour"
@@ -114,6 +115,14 @@ func main() {
 	s.RegisterRoute(http.MethodPost, "/groupupdate", groupsvc.Group_update)
 	s.RegisterRoute(http.MethodGet, "/grouplist", groupsvc.Group_list)
 
+	// Register a route for handling capabilities
+	s.RegisterRoute(http.MethodPost, "/capusergrant", capsvc.Capuser_grant)
+	s.RegisterRoute(http.MethodPost, "/capuserrevoke", capsvc.Capuser_revoke)
+	s.RegisterRoute(http.MethodGet, "/capusergetall", capsvc.Capuser_getall)
+
+	s.RegisterRoute(http.MethodPost, "/capgroupgrant", capsvc.Capgroup_grant)
+	s.RegisterRoute(http.MethodPost, "/capgrouprevoke", capsvc.Capgroup_revoke)
+	s.RegisterRoute(http.MethodGet, "/capgroupgetall", capsvc.Capgroup_getall)
 
 	// Start the service
 	if err := r.Run(":" + appConfig.AppServerPort); err != nil {

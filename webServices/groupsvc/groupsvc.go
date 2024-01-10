@@ -111,7 +111,7 @@ func Group_new(c *gin.Context, s *service.Service) {
 	}
 
 	// Create a group
-	_, err = gcClient.CreateGroup(c, token, realm, group)
+	ID, err := gcClient.CreateGroup(c, token, realm, group)
 	if err != nil {
 		l.LogActivity("Error while creating user:", logharbour.DebugInfo{Variables: map[string]any{"error": err}})
 		wscutils.SendErrorResponse(c, &wscutils.Response{Data: err})
@@ -119,7 +119,7 @@ func Group_new(c *gin.Context, s *service.Service) {
 	}
 
 	// Send success response
-	wscutils.SendSuccessResponse(c, &wscutils.Response{Status: "success"})
+	wscutils.SendSuccessResponse(c, &wscutils.Response{Status: "success", Data: ID})
 
 	// Log the completion of execution
 	l.Log("Finished execution of Group_new()")
@@ -250,7 +250,6 @@ func Group_update(c *gin.Context, s *service.Service) {
 	err = wscutils.BindJSON(c, &g)
 	if err != nil {
 		l.LogActivity("Error Unmarshalling JSON to struct:", logharbour.DebugInfo{Variables: map[string]any{"Error": err.Error()}})
-		wscutils.SendErrorResponse(c, wscutils.NewErrorResponse(wscutils.ErrcodeInvalidJson))
 		return
 	}
 
@@ -272,9 +271,14 @@ func Group_update(c *gin.Context, s *service.Service) {
 	groups, err := gcClient.GetGroups(c, token, realm, gocloak.GetGroupsParams{
 		Search: &g.ShortName,
 	})
-	if err != nil || len(groups) < 1 {
-		l.LogActivity("Error while getting group ID:", logharbour.DebugInfo{Variables: map[string]any{"Error": err}})
-		wscutils.SendErrorResponse(c, wscutils.NewErrorResponse(utils.ErrWhileGettingInfo))
+	if err != nil {
+		utils.GocloakErrorHandler(c, l, err)
+		return
+	}
+	if len(groups) == 0 {
+		l.Log("Error while gcClient.GetGroups Group doesn't exist ")
+		str := "shortName"
+		wscutils.SendErrorResponse(c, wscutils.NewResponse("error", nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.ErrNotExist, &str)}))
 		return
 	}
 	attr := make(map[string][]string)

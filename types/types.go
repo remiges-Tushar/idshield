@@ -16,20 +16,21 @@ type AppConfig struct {
 type OpReq struct {
 	User      string   `json:"user"`
 	CapNeeded []string `json:"capNeeded"`
-	Scope     scope    `json:"scope"`
-	Limit     limit    `json:"limit"`
+	Scope     Scope    `json:"scope"`
+	Limit     Limit    `json:"limit"`
 }
 
-type scope map[string]string
-type limit map[string]int64
+type Scope map[string]interface{}
+type Limit map[string]interface{}
 
-// Capabilities representing user capabilities.
+type QualifiedCap struct {
+	Id    string `json:"id"`
+	Cap   string `json:"cap"`
+	Scope Scope  `json:"scope"`
+	Limit Limit  `json:"limit"`
+}
+
 type Capabilities struct {
-	Caplist []Caplist `json:"caplist"`
-}
-
-type Caplist struct {
-	Cap   string   `json:"cap"`
-	Scope []string `json:"scope"`
-	Limit []string `json:"limit"`
+	Name          string         `json:"name"` //either user name or group name
+	QualifiedCaps []QualifiedCap `json:"qualifiedcaps"`
 }

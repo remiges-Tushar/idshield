@@ -20,12 +20,12 @@ import (
 )
 
 type user struct {
-	ID         string            `json:"id,omitempty"`
+	ID         *string            `json:"id,omitempty"`
 	Username   string            `json:"username" validate:"required"`
 	Email      string            `json:"email" validate:"required,email"`
-	FirstName  string            `json:"firstName,omitempty"`
-	LastName   string            `json:"lastName,omitempty"`
-	Attributes map[string]string `json:"attributes,omitempty"`
+	FirstName  *string            `json:"firstName,omitempty"`
+	LastName   *string            `json:"lastName,omitempty"`
+	Attributes *map[string]string `json:"attributes,omitempty"`
 	Enabled    bool              `json:"enabled" validate:"required"`
 }
 
@@ -68,7 +68,7 @@ type userActivity struct {
 	Username string `json:"username,omitempty"`
 }
 
-// HandleCreateUserRequest is creating a new user in keycloak.
+// User_new handles the POST /usernew request
 func User_new(c *gin.Context, s *service.Service) {
 	l := s.LogHarbour
 	l.Log("Starting execution of User_new()")
@@ -120,14 +120,14 @@ func User_new(c *gin.Context, s *service.Service) {
 		return
 	}
 	attr := make(map[string][]string)
-	for key, value := range u.Attributes {
+	for key, value := range *u.Attributes {
 		attr[key] = []string{value}
 	}
 
 	keycloakUser := gocloak.User{
 		Username:   &u.Username,
-		FirstName:  &u.FirstName,
-		LastName:   &u.LastName,
+		FirstName:  u.FirstName,
+		LastName:   u.LastName,
 		Email:      &u.Email,
 		Attributes: &attr,
 		Enabled:    &u.Enabled,
@@ -153,6 +153,7 @@ func User_new(c *gin.Context, s *service.Service) {
 
 	l.Log("Finished execution of User_new()")
 }
+
 
 // User_list handles the GET /userlist request
 func User_list(c *gin.Context, s *service.Service) {
@@ -197,8 +198,8 @@ func User_list(c *gin.Context, s *service.Service) {
 	// Authz_check():
 	isCapable, _ := utils.Authz_check(types.OpReq{User: reqUserName, CapNeeded: []string{"devloper", "admin"}}, false)
 	if !isCapable {
-		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.ErrUserNotAuthorized, nil)}))
-		lh.Debug0().Log(utils.ErrUserNotAuthorized)
+		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.ErrUnauthorized, nil)}))
+		lh.Debug0().Log(utils.ErrUnauthorized)
 		return
 	}
 
@@ -297,7 +298,7 @@ func User_get(c *gin.Context, s *service.Service) {
 	isCapable, _ := utils.Authz_check(types.OpReq{User: reqUserName, CapNeeded: []string{"devloper", "admin"}}, false)
 	if !isCapable {
 		wscutils.SendErrorResponse(c, wscutils.NewResponse(wscutils.ErrorStatus, nil, []wscutils.ErrorMessage{wscutils.BuildErrorMessage(utils.ErrUserNotAuthorized, nil)}))
-		lh.Debug0().Log(utils.ErrUserNotAuthorized)
+		lh.Debug0().Log(utils.ErrUnauthorized)
 		return
 	}
 
@@ -527,6 +528,7 @@ func User_delete(c *gin.Context, s *service.Service) {
 	wscutils.SendSuccessResponse(c, nil)
 }
 
+// User_activate handles the DELETE /Useractivate request
 func User_activate(c *gin.Context, s *service.Service) {
 	l := s.LogHarbour
 	l.Log("Starting execution of User_activate()")
@@ -572,7 +574,7 @@ func User_activate(c *gin.Context, s *service.Service) {
 	err = u.CustomValidate()
 	if err != nil {
 		l.Debug0().LogDebug("either ID or Username is set, but not both", logharbour.DebugInfo{Variables: map[string]any{"error": err}})
-		wscutils.SendErrorResponse(c, wscutils.NewErrorResponse(utils.ErrIDandUserNameMissing))
+		wscutils.SendErrorResponse(c, wscutils.NewErrorResponse(utils.ErrEitherIDOrUsernameIsSetButNotBoth))
 		return
 	}
 
@@ -624,6 +626,7 @@ func User_activate(c *gin.Context, s *service.Service) {
 	l.Log("Finished execution of User_activate()")
 }
 
+// Userdeactivate handles the DELETE /Userdeactivate request
 func User_deactivate(c *gin.Context, s *service.Service) {
 	l := s.LogHarbour
 	l.Log("Starting execution of User_deactivate()")
